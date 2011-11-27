@@ -1,6 +1,6 @@
 Name:           maven-ejb-plugin
 Version:        2.3
-Release:        2
+Release:        4
 Summary:        Maven EJB Plugin
 
 Group:          Development/Java
