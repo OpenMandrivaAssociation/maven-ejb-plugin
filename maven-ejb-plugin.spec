@@ -1,42 +1,25 @@
+%{?_javapackages_macros:%_javapackages_macros}
 Name:           maven-ejb-plugin
 Version:        2.3
-Release:        4
+Release:        9.0%{?dist}
 Summary:        Maven EJB Plugin
 
-Group:          Development/Java
 License:        ASL 2.0
 URL:            http://maven.apache.org/plugins/maven-ejb-plugin/
 Source0:        http://repo2.maven.org/maven2/org/apache/maven/plugins/%{name}/%{version}/%{name}-%{version}-source-release.zip
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildArch: noarch
 
-BuildRequires: java-devel >= 0:1.6.0
-BuildRequires: jpackage-utils
-BuildRequires: maven2
-BuildRequires: maven-plugin-plugin
-BuildRequires: maven-compiler-plugin
-BuildRequires: maven-install-plugin
-BuildRequires: maven-jar-plugin
-BuildRequires: maven-javadoc-plugin
-BuildRequires: maven-resources-plugin
-BuildRequires: maven-surefire-plugin
-BuildRequires: maven-archiver
-BuildRequires: plexus-utils
-BuildRequires: plexus-archiver
-BuildRequires: maven-plugin-testing-harness
-BuildRequires: maven-surefire-provider-junit
+BuildRequires:  maven-local
+BuildRequires:  mvn(org.apache.maven.plugins:maven-plugins)
+BuildRequires:  mvn(org.apache.maven.shared:maven-filtering)
+BuildRequires:  mvn(org.apache.maven:maven-archiver)
+BuildRequires:  mvn(org.apache.maven:maven-artifact)
+BuildRequires:  mvn(org.apache.maven:maven-plugin-api)
+BuildRequires:  mvn(org.apache.maven:maven-project)
+BuildRequires:  mvn(org.codehaus.plexus:plexus-archiver)
+BuildRequires:  mvn(org.codehaus.plexus:plexus-utils)
 
-Requires:       maven2
-Requires:       java
-Requires:       jpackage-utils
-Requires: maven-archiver
-Requires: plexus-utils
-Requires: plexus-archiver
-Requires: maven-plugin-testing-harness
-
-Requires(post):       jpackage-utils
-Requires(postun):     jpackage-utils
 
 Obsoletes: maven2-plugin-ejb <= 0:2.0.8
 Provides: maven2-plugin-ejb = 0:%{version}-%{release}
@@ -46,66 +29,74 @@ Generates a J2EE Enterprise JavaBean (EJB) file
 as well as the associated client JAR.
 
 %package javadoc
-Group:          Development/Java
 Summary:        Javadoc for %{name}
-Requires:       jpackage-utils
 
 %description javadoc
 API documentation for %{name}.
 
-
 %prep
-%setup -q #You may need to update this according to your Source0
+%setup -q 
+
+# Install JAR file to %{_javadir}/%{name}.jar
+%mvn_file : %{name}
 
 %build
-export MAVEN_REPO_LOCAL=$(pwd)/.m2/repository
-mvn-jpp \
-        -e \
-        -Dmaven2.jpp.mode=true \
-        -Dmaven.repo.local=$MAVEN_REPO_LOCAL \
-        -Dmaven.test.skip=true \
-        install javadoc:javadoc
+# Skip tests (API incompatibilities with our maven-artifact 2.2.1)
+%mvn_build -f
 
 %install
-rm -rf %{buildroot}
+%mvn_install
 
-# jars
-install -d -m 0755 %{buildroot}%{_javadir}
-install -m 644 target/%{name}-%{version}.jar   %{buildroot}%{_javadir}/%{name}-%{version}.jar
+%files -f .mfiles
+%doc LICENSE NOTICE
 
-(cd %{buildroot}%{_javadir} && for jar in *-%{version}*; \
-    do ln -sf ${jar} `echo $jar| sed "s|-%{version}||g"`; done)
+%files javadoc -f .mfiles-javadoc
+%doc LICENSE NOTICE
 
-%add_to_maven_depmap org.apache.maven.plugins maven-ejb-plugin %{version} JPP maven-ejb-plugin
+%changelog
+* Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.3-9
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
 
-# poms
-install -d -m 755 %{buildroot}%{_mavenpomdir}
-install -pm 644 pom.xml \
-    %{buildroot}%{_mavenpomdir}/JPP-%{name}.pom
+* Fri Jul 12 2013 Michal Srb <msrb@redhat.com> - 2.3-8
+- Install LICENSE and NOTICE files (Resolves: rhbz#983882)
+- Adapt to current guidelines
+- Fix BR
 
-# javadoc
-install -d -m 0755 %{buildroot}%{_javadocdir}/%{name}-%{version}
-cp -pr target/site/api*/* %{buildroot}%{_javadocdir}/%{name}-%{version}/
-ln -s %{name}-%{version} %{buildroot}%{_javadocdir}/%{name}
-rm -rf target/site/api*
+* Thu Feb 14 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.3-7
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
 
-%post
-%update_maven_depmap
+* Wed Feb 06 2013 Java SIG <java-devel@lists.fedoraproject.org> - 2.3-6
+- Update for https://fedoraproject.org/wiki/Fedora_19_Maven_Rebuild
+- Replace maven BuildRequires with maven-local
 
-%postun
-%update_maven_depmap
+* Thu Jul 19 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.3-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
 
-%clean
-rm -rf %{buildroot}
+* Fri Jan 13 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.3-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
 
-%files
-%defattr(-,root,root,-)
-%{_javadir}/*
-%{_mavenpomdir}/*
-%{_mavendepmapfragdir}/*
+* Fri Jun 17 2011 Alexander Kurtakov <akurtako@redhat.com> 2.3-3
+- Build with maven 3.
 
-%files javadoc
-%defattr(-,root,root,-)
-%{_javadocdir}/%{name}-%{version}
-%{_javadocdir}/%{name}
+* Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.3-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
 
+* Thu Oct 14 2010 Alexander Kurtakov <akurtako@redhat.com> 2.3-1
+- Update to 2.3.
+
+* Tue Jul 13 2010 Hui Wang <huwang@redhat.com> - 2.2.1-5
+- Skip tests
+
+* Tue Jul 13 2010 Hui Wang <huwang@redhat.com> - 2.2.1-4
+- Add missing requires maven2
+
+* Wed Jun 02 2010 Hui Wang <huwang@redhat.com> - 2.2.1-3
+- Changed epoch 1 to epoch 0 in provides
+
+* Wed Jun 02 2010 Hui Wang <huwang@redhat.com> - 2.2.1-2
+- Added epoch 1 to provides
+- Fixed description line length
+- Fixed tarball generation svn instruction
+
+* Tue Jun 01 2010 Hui Wang <huwang@redhat.com> - 2.2.1-1
+- Initial version of the package
