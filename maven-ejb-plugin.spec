@@ -11,7 +11,7 @@ Source0:        http://repo2.maven.org/maven2/org/apache/maven/plugins/%{name}/%
 BuildArch: noarch
 
 BuildRequires:  maven-local
-BuildRequires:  mvn(org.apache.maven.plugins:maven-plugins)
+BuildRequires:  mvn(org.apache.maven.plugins:maven-plugins:pom:)
 BuildRequires:  mvn(org.apache.maven.shared:maven-filtering)
 BuildRequires:  mvn(org.apache.maven:maven-archiver)
 BuildRequires:  mvn(org.apache.maven:maven-artifact)
